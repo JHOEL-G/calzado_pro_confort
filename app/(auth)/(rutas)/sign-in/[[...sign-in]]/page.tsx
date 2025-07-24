@@ -10,7 +10,7 @@ export default function Page() {
 
     useEffect(() => {
         router.refresh()
-    }, [])
+    },)
 
     return <Disposicion> <SignIn /> </Disposicion>
 }

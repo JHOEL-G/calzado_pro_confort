@@ -2,10 +2,11 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { ArrowDown, MoreHorizontal, Pencil, Trash } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu" // Asegúrate de importar DropdownMenuLabel y DropdownMenuSeparator
+import { ArrowDown, MoreHorizontal, Pencil, Trash } from "lucide-react" // Asegúrate de ArrowDown y MoreHorizontal
 import Image from "next/image"
 import Link from "next/link"
+import { DeleteProductAction } from "@/app/(rutas)/componentes/product/DeleteProductAction" // Asegúrate de que esta ruta sea correcta
 
 type Variante = {
     talla: string
@@ -24,7 +25,7 @@ type Producto = {
     variantes: Variante[]
 }
 
-export const columns: ColumnDef<Producto>[] = [
+export const columns = (onProductDeletedCallback: () => void): ColumnDef<Producto>[] => [
     {
         accessorKey: "imagenUrl",
         header: "Imagen",
@@ -102,15 +103,23 @@ export const columns: ColumnDef<Producto>[] = [
                             </Link>
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem onClick={() => console.log("Eliminar ID:", id)}>
-                            <Trash className="w-4 h-4 mr-2" />
-                            Eliminar
-                        </DropdownMenuItem>
+                        <DeleteProductAction
+                            productId={id}
+                            onProductDeleted={onProductDeletedCallback}
+                        >
+                            <DropdownMenuItem
+                                onSelect={(event) => {
+                                    event.preventDefault();
+                                    console.log("onSelect del DropdownMenuItem de Eliminar");
+                                }}
+                            >
+                                <Trash className="w-4 h-4 mr-2" />
+                                Eliminar
+                            </DropdownMenuItem>
+                        </DeleteProductAction>
                     </DropdownMenuContent>
                 </DropdownMenu>
-
-
             )
         },
     },
-]
+];
