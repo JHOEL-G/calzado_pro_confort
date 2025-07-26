@@ -10,7 +10,7 @@ async function Usuario(): Promise<{ userId: string }> {
 }
 
 export const ourFileRouter = {
-  imagenUrl: f({ image: { maxFileSize: "16MB", maxFileCount: 1 } })
+  imagenUrl: f({ image: { maxFileSize: "8MB", maxFileCount: 1 } })
     .middleware(async () => await Usuario())
     .onUploadComplete(() => {}),
 } satisfies FileRouter;
