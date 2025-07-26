@@ -1,5 +1,5 @@
 // components/Navbar.tsx
-import { Menu, Search, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Menu, Search, ChevronsLeft } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "../ui/sheet";
 import { Input } from "../ui/input";
 import { UserButton, SignedIn, SignedOut, SignInButton, SignUpButton } from "@clerk/nextjs"; // Importa estos
