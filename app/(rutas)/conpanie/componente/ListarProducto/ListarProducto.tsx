@@ -8,8 +8,7 @@ import { useEffect, useState, useCallback } from "react"
 import { toast } from "sonner"
 import { TablaDatos } from "./data.tabla"
 import { columns } from "./Columns"
-import useSWR from 'swr'
-import { SWRConfig } from 'swr'
+import useSWR, { SWRConfig } from 'swr'
 
 type Variante = {
     talla: string
@@ -41,19 +40,26 @@ export function ListarProducto() {
 
     useEffect(() => {
         if (!isLoaded) return;
-
         if (!isSignedIn) {
             router.push("/conpanie");
-            return;
         }
-    }, [isSignedIn, isLoaded, router])
+    }, [isSignedIn, isLoaded, router]);
 
     useEffect(() => {
         if (error) {
-            toast.error("No se ha podido mostrar los datos");
+            toast.error("Error al cargar los datos: " + error.message);
             console.error("Error fetching products:", error);
+            return;
         }
-    }, [error]);
+        if (!isLoading) {
+            if (!productos || productos.length === 0) {
+                toast.info("No hay productos disponibles en la base de datos ¿Quieres agregar uno?");
+                console.warn("No products found in the database.");
+            } else {
+                toast.success("Los productos se han cargado correctamente.");
+            }
+        }
+    }, [error, isLoading, productos]);
 
     const formattedProductos = productos?.map((producto: Producto) => ({
         ...producto,
@@ -61,20 +67,14 @@ export function ListarProducto() {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit'
-        })
+        }),
     })) || [];
-
-    if (isLoading) {
-        return <p>Cargando productos...</p>;
-    }
-
-    if (error) {
-        return <p>Error al cargar los productos.</p>;
-    }
 
     return (
         <div>
-            <TablaDatos columns={columns(mutate)} data={formattedProductos} />
+            {!isLoading && !error && (
+                <TablaDatos columns={columns(mutate)} data={formattedProductos} />
+            )}
         </div>
     )
 }

@@ -28,6 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
     Form,
     FormControl,
+    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -36,6 +37,9 @@ import {
 import { UploadButton } from "@/utils/uploadthing"; // Assuming this path is correct
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DeleteProductAction } from "@/app/(rutas)/componentes/product/DeleteProductAction";
+import { Calendar24 } from "@/components/ui/Calendar24";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Zod schemas for validation
 const variantSchema = z.object({
@@ -58,7 +62,7 @@ const productFormSchema = z.object({
 });
 
 export default function EditProductForm() {
-    const { conpanyId: paramProductId } = useParams(); // Renamed conpanyId to productId to match common usage
+    const { conpanyId: paramProductId } = useParams();
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);
@@ -244,7 +248,7 @@ export default function EditProductForm() {
                                             placeholder="Descripción del producto"
                                             {...field}
                                             rows={3}
-                                            value={field.value || ""} // Ensure controlled component even if optional
+                                            value={field.value || ""}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -262,9 +266,7 @@ export default function EditProductForm() {
                                     <FormItem className="sm:col-span-2">
                                         <FormLabel>URL de Imagen</FormLabel>
                                         <FormControl>
-                                            {/* Contenedor principal para toda la sección de imagen, centrado y responsivo */}
                                             <div className="flex flex-col items-center space-y-4 p-4 w-full max-w-md mx-auto">
-                                                {/* Contenedor para el botón de subir imagen y el texto de formato */}
                                                 <div className="flex flex-col items-center justify-center text-center w-full">
                                                     <UploadButton
                                                         endpoint="imagenUrl"
@@ -272,18 +274,23 @@ export default function EditProductForm() {
                                                         content={{
                                                             button: () =>
                                                                 imageUrl ? "Cambiar imagen" : "Subir imagen",
-                                                            allowedContent: () => "Formatos permitidos: PNG, JPG, JPEG",
+                                                            allowedContent: () =>
+                                                                "Formatos permitidos: PNG, JPG, JPEG",
                                                         }}
                                                         appearance={{
-                                                            container: "flex flex-col items-center justify-center",
-                                                            allowedContent: "text-sm text-white dark:text-gray-400 font-bold mb-2",
+                                                            container:
+                                                                "flex flex-col items-center justify-center",
+                                                            allowedContent:
+                                                                "text-sm text-white dark:text-gray-400 font-bold mb-2",
                                                         }}
                                                         onClientUploadComplete={(res) => {
                                                             if (res?.[0]?.url) {
                                                                 form.setValue("imagenUrl", res[0].url);
                                                                 toast.success("Imagen subida correctamente");
                                                             } else {
-                                                                toast.error("No se obtuvo la URL de la imagen");
+                                                                toast.error(
+                                                                    "No se obtuvo la URL de la imagen"
+                                                                );
                                                             }
                                                         }}
                                                         onUploadError={(error: Error) => {
@@ -307,7 +314,9 @@ export default function EditProductForm() {
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                onClick={() => window.open(imageUrl, "_blank")}
+                                                                onClick={() =>
+                                                                    window.open(imageUrl, "_blank")
+                                                                }
                                                                 className="text-blue-500 hover:underline w-full sm:w-auto"
                                                             >
                                                                 Previsualizar Imagen
@@ -335,23 +344,26 @@ export default function EditProductForm() {
                             control={form.control}
                             name="fechaCreacion"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Fecha de Creación</FormLabel>
+                                <FormItem className="flex flex-col">
+                                    <FormLabel className="font-bold pb-1">Editar Fecha</FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="datetime-local"
-                                            value={field.value.slice(0, 16)} // Format for datetime-local input
-                                            onChange={(e) => field.onChange(e.target.value)}
-                                            required
+                                        <Calendar24
+                                            value={field.value ? new Date(field.value) : undefined}
+                                            onChange={(date) =>
+                                                field.onChange(date ? date.toISOString() : undefined)
+                                            }
                                         />
                                     </FormControl>
+                                    <FormDescription className="font-bold">
+                                        La fecha de creación del producto.
+                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
                     </div>
 
-                    <h1 className="text-2xl font-bold mt-10 mb-4 text-gray-800 dark:text-gray-200">
+                    <h1 className="text-2xl font-bold mt-1 mb-4 text-gray-800 dark:text-gray-200">
                         Variantes
                     </h1>
                     {fields.length === 0 && (
@@ -362,8 +374,10 @@ export default function EditProductForm() {
 
                     {fields.map((field, index) => (
                         <Card key={field.id} className="mb-6">
-                            <CardContent className="pt-6 grid gap-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"> {/* Adjusted for better spacing */}
+                            <CardContent className="pt-4 grid gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    {" "}
+                                    {/* Adjusted for better spacing */}
                                     <FormField
                                         control={form.control}
                                         name={`variantes.${index}.talla`}
@@ -403,7 +417,9 @@ export default function EditProductForm() {
                                                         step="0.01"
                                                         {...variantField}
                                                         onChange={(e) => {
-                                                            variantField.onChange(parseFloat(e.target.value) || 0);
+                                                            variantField.onChange(
+                                                                parseFloat(e.target.value) || 0
+                                                            );
                                                         }}
                                                         value={variantField.value || ""} // Handle potential undefined value
                                                     />
@@ -425,7 +441,9 @@ export default function EditProductForm() {
                                                         step="1"
                                                         {...variantField}
                                                         onChange={(e) => {
-                                                            variantField.onChange(parseInt(e.target.value) || 0);
+                                                            variantField.onChange(
+                                                                parseInt(e.target.value) || 0
+                                                            );
                                                         }}
                                                         value={variantField.value || ""} // Handle potential undefined value
                                                     />
@@ -439,19 +457,19 @@ export default function EditProductForm() {
                             <CardFooter className="flex justify-end pt-0">
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button
-                                            type="button"
-                                            variant="destructive"
-                                        >
+                                        <Button type="button" variant="destructive">
                                             Eliminar Variante
                                         </Button>
                                     </AlertDialogTrigger>
 
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
-                                            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                                            <AlertDialogTitle>
+                                                ¿Estás absolutamente seguro?
+                                            </AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                Esta acción no se puede deshacer. Esto eliminará permanentemente esta variante de tu producto.
+                                                Esta acción no se puede deshacer. Esto eliminará
+                                                permanentemente esta variante de tu producto.
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
@@ -481,8 +499,14 @@ export default function EditProductForm() {
                             Agregar Variante
                         </Button>
 
-                        <Button type="submit" disabled={form.formState.isSubmitting || fotoUploader} className="w-full sm:w-auto">
-                            {form.formState.isSubmitting || fotoUploader ? "Modificando..." : "Modificar Producto"}
+                        <Button
+                            type="submit"
+                            disabled={form.formState.isSubmitting || fotoUploader}
+                            className="w-full sm:w-auto"
+                        >
+                            {form.formState.isSubmitting || fotoUploader
+                                ? "Modificando..."
+                                : "Modificar Producto"}
                         </Button>
 
                         <DeleteProductAction

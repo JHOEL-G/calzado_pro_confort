@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
+
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,6 +10,7 @@ import axios from "axios";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs"; // Importa useAuth de Clerk
 
 import { Button } from "@/components/ui/button";
 import {
@@ -46,13 +49,13 @@ const formSchema = z.object({
 
 interface FormularioProductoProps {
     setOpen: (v: boolean) => void;
-    // Añadimos una nueva prop: una función que se llamará cuando el producto sea creado exitosamente
     onProductCreated?: () => void;
 }
 
 export function FormularioProducto({ setOpen, onProductCreated }: FormularioProductoProps) {
     const [fotoUploader, setFotoUploader] = useState(false);
     const router = useRouter();
+    const { userId, isLoaded } = useAuth(); // Obtiene el estado de autenticación de Clerk
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -71,20 +74,29 @@ export function FormularioProducto({ setOpen, onProductCreated }: FormularioProd
     });
 
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
+        if (!isLoaded) {
+            toast.info("Cargando estado de autenticación...");
+            return;
+        }
+
+        if (isLoaded && !userId) {
+            toast.warning("Debes iniciar sesión para guardar un producto", {
+                icon: "🔒",
+            });
+            return;
+        }
+
         try {
             setFotoUploader(true);
-            await axios.post("/api/products", values); // Asegúrate de que esta URL sea correcta para tu API
+            await axios.post("/api/products", values);
             toast.success("Producto creado correctamente");
 
-            // Si hay una función onProductCreated proporcionada, la llamamos
             if (onProductCreated) {
                 onProductCreated();
             }
 
-            // router.refresh(); // Descomenta si aún necesitas la recarga completa de la ruta
-            // router.push("/conpanie"); // Esto ya es una redirección después de crear
-            setOpen(false); // Cierra el modal/dialogo
-            form.reset(); // Resetea el formulario
+            setOpen(false);
+            form.reset();
         } catch (error: any) {
             const msg = error.response?.data?.message || error.message || "Error desconocido al crear el producto.";
             toast.error(`Error: ${msg}`);
@@ -173,7 +185,7 @@ export function FormularioProducto({ setOpen, onProductCreated }: FormularioProd
                                                             allowedContent: "text-sm text-white dark:text-gray-400 mt-1 font-bold ",
                                                         }}
                                                         onClientUploadComplete={(res) => {
-                                                            if (res?.[0]?.url) { // Corregido de ufsUrl a url si es lo que devuelve uploadthing
+                                                            if (res?.[0]?.url) {
                                                                 form.setValue("imagenUrl", res[0].url);
                                                                 toast.success("Imagen subida correctamente");
                                                             } else {
@@ -264,7 +276,7 @@ export function FormularioProducto({ setOpen, onProductCreated }: FormularioProd
                                                 <Input
                                                     placeholder="Precio"
                                                     type="number"
-                                                    step="0.01" // Cambiado a 0.01 para permitir decimales en precio
+                                                    step="0.01"
                                                     min={0}
                                                     {...field}
                                                     onChange={(e) => field.onChange(parseFloat(e.target.value))}

@@ -27,7 +27,7 @@ export default async function Page({
         const res = await axios.get(
             `${process.env.NEXT_PUBLIC_API_URL}/api/Products/${conpanyId}`,
             {
-                timeout: 20000, // ⏱️ Espera hasta 20 segundos por si el servidor tarda
+                timeout: 20000,
             }
         );
 

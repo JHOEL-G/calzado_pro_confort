@@ -5,18 +5,24 @@ import { SidebarItemsProps } from "./SidebarItems.type";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
-export function SidebarItems(props: SidebarItemsProps) {
-    const { item } = props;
-    const { href, icon: Icon, label } = item
+export function SidebarItems(props: SidebarItemsProps & { collapsed?: boolean }) {
+    const { item, collapsed = false } = props;
+    const { href, icon: Icon, label } = item;
 
-    const pathname = usePathname()
-
-    const activePath = pathname === href
+    const pathname = usePathname();
+    const activePath = pathname === href;
 
     return (
-        <Link href={href} className={cn(`flex gap-x-2 mt-2 light:text-slate-700 dark:text-white text-sm items-center hover:bg-slate-300/20 p-2 rounded-lg cursor-pointer`, activePath && `bg-slate-400/20`)}>
+        <Link
+            href={href}
+            className={cn(
+                "flex items-center mt-2 p-2 rounded-lg cursor-pointer transition-all text-sm hover:bg-slate-300/20 dark:text-white light:text-slate-700",
+                collapsed ? "justify-center" : "gap-x-2",
+                activePath && "bg-slate-400/20"
+            )}
+        >
             <Icon strokeWidth={1} className="w-5 h-5" />
-            {label}
+            {!collapsed && <span>{label}</span>}
         </Link>
-    )
+    );
 }

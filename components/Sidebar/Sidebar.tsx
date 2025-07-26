@@ -1,13 +1,13 @@
 import { Logo } from "../Logo/Logo";
 import { SidebarRoutes } from "../SidebarRoutes/SidebarRoutes";
 
-export function Sidebar() {
+export function Sidebar({ collapsed }: { collapsed: boolean }) {
     return (
-        <div className="h-screen">
-            <div className="h-full flex flex-col border-r">
-                <Logo />
-                <SidebarRoutes />
+        <div className="h-screen flex flex-col border-r transition-all duration-300 bg-background">
+            <div className="p-4">
+                <Logo collapsed={collapsed} />
             </div>
+            <SidebarRoutes collapsed={collapsed} />
         </div>
-    )
+    );
 }
