@@ -5,6 +5,8 @@ html, body, :root {
   height: 100%;
 }
 
+
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
