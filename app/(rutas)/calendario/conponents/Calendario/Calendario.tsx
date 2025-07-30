@@ -1,17 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/formatDate";
-
 import FullCalendar from "@fullcalendar/react";
 import daygridPlugin from '@fullcalendar/daygrid';
 import timegridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import multiMonthPlugin from '@fullcalendar/multimonth';
-
 import { DateSelectArg, EventContentArg, EventInput, EventClickArg } from '@fullcalendar/core';
-
 import { useEffect, useState } from "react";
 import { CalendarioProps } from "./Calendario.types";
 import { ModalEvents } from "../ModalEvents";
@@ -30,20 +28,17 @@ import {
 
 export function Calendario(props: CalendarioProps) {
     const { companies, events } = props;
-    console.log("Companies recibidas en Calendario:", companies);
     const router = useRouter();
 
     const [open, setOpen] = useState(false);
     const [onSaveNewEvent, setOnSaveNewEvent] = useState(false);
     const [selectedDate, setSelectedDate] = useState<DateSelectArg | null>(null);
-
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [eventToDelete, setEventToDelete] = useState<EventClickArg | null>(null);
-
     const [newEvent, setNewEvent] = useState({
         eventName: "",
-        companySelected: { name: "", id: 0 }, // CORREGIDO: id inicializado como number
-        description: "", // AÑADIDO: propiedad description
+        companySelected: { name: "", id: 0 },
+        description: "",
     });
 
     const calendarEvents: EventInput[] = events.map(event => ({
@@ -52,59 +47,60 @@ export function Calendario(props: CalendarioProps) {
         start: event.start,
         end: event.end,
         description: event.description,
+        location: event.location,
+        allDay: event.allDay,
     }));
 
-    const handleDateSelect = async (e: DateSelectArg) => {
+    const handleDateSelect = (e: DateSelectArg) => {
         setSelectedDate(e);
         setOpen(true);
     };
 
-    useEffect(() => {
-        if (onSaveNewEvent && selectedDate?.view.calendar) {
-            const calendarApi = selectedDate.view.calendar;
-            calendarApi.unselect();
+    const saveNewEvent = async () => {
+        if (!selectedDate) return;
 
-            const newEventToSave = {
-                // Aquí debes asegurarte de que 'conpanyId' sea 'CompanyId' o 'Location'
-                // según lo que tu API de C# espere.
-                // Basado en tus interfaces, si Event tiene 'Location: string',
-                // entonces deberías enviar 'location: newEvent.companySelected.name'.
-                // Si espera un ID de la empresa, y 'id' en companySelected es el ID de la empresa,
-                // entonces sería 'companyId: newEvent.companySelected.id'.
-                // Por ejemplo, si tu modelo de C# para un Evento espera `Location` como el nombre de la empresa:
-                location: newEvent.companySelected.name,
-                // O si tu modelo de C# espera `CompanyId` como el ID de la empresa:
-                // companyId: newEvent.companySelected.id,
-                title: newEvent.eventName,
-                start: selectedDate.startStr, // Usa startStr/endStr para formato ISO 8601
-                end: selectedDate.endStr,
-                description: newEvent.description,
-                allDay: selectedDate.allDay,
-                // Si 'userId' es necesario en el backend, asegúrate de pasarlo aquí:
-                // userId: props.userId, // Tendrías que añadir 'userId: string;' a CalendarioProps
-            };
+        if (!newEvent.eventName || !newEvent.companySelected.name) {
+            toast("Por favor, complete todos los campos obligatorios");
+            setOnSaveNewEvent(false);
+            return;
+        }
 
-            axios
-                .post(`${process.env.NEXT_PUBLIC_API_URL}/api/Events`, newEventToSave)
-                .then(() => {
-                    toast("Evento creado exitosamente");
-                    router.refresh();
-                    setOpen(false); // Cierra el modal de creación
-                })
-                .catch((error) => {
-                    console.error("Error al crear el evento:", error.response?.data || error.message);
-                    toast("Error al crear el evento");
-                });
+        const calendarApi = selectedDate.view.calendar;
+        calendarApi.unselect();
 
-            // Resetear el estado de newEvent después de guardar
+        const newEventToSave = {
+            location: newEvent.companySelected.name,
+            title: newEvent.eventName,
+            start: selectedDate.start.toISOString(),
+            end: selectedDate.end.toISOString(),
+            description: newEvent.description,
+            allDay: selectedDate.allDay,
+        };
+
+        try {
+            await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/Events`, newEventToSave);
+            toast("Evento creado exitosamente");
+            router.refresh();
+            setOpen(false);
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || error.message || "Error desconocido";
+            console.error("Error al crear el evento:", errorMessage);
+            toast(`Error al crear el evento: ${errorMessage}`);
+        } finally {
             setNewEvent({
                 eventName: "",
-                companySelected: { name: "", id: 0 }, // Resetear id a 0 y name a ""
-                description: "", // Resetear description
+                companySelected: { name: "", id: 0 },
+                description: "",
             });
             setOnSaveNewEvent(false);
         }
-    }, [onSaveNewEvent, selectedDate, router, newEvent.eventName, newEvent.companySelected.name, newEvent.description, selectedDate?.allDay, selectedDate?.startStr, selectedDate?.endStr]);
+    };
+
+    useEffect(() => {
+        if (onSaveNewEvent && selectedDate) {
+            saveNewEvent();
+        }
+    }, [onSaveNewEvent, selectedDate]);
 
     const handleEventClick = (selected: EventClickArg) => {
         setEventToDelete(selected);
@@ -115,14 +111,13 @@ export function Calendario(props: CalendarioProps) {
         if (!eventToDelete) return;
 
         try {
-            await axios.delete(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/Events/${eventToDelete.event.id}`
-            );
-            router.refresh();
+            await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/Events/${eventToDelete.event.id}`);
             toast("Evento eliminado exitosamente");
-        } catch (error) {
-            console.error("Error al eliminar el evento:", error);
-            toast("Error al eliminar el evento");
+            router.refresh();
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || error.message || "Error desconocido";
+            console.error("Error al eliminar el evento:", errorMessage);
+            toast(`Error al eliminar el evento: ${errorMessage}`);
         } finally {
             setOpenDeleteDialog(false);
             setEventToDelete(null);
@@ -130,25 +125,38 @@ export function Calendario(props: CalendarioProps) {
     };
 
     return (
-        <div>
-            <div className="md:flex gap-x-3">
-                <div className="w-[200px] relative">
-                    <div className="absolute top-0 left-0 w-full h-full overflow-auto">
-                        <p className="text-center dark:text-white text-2xl font-bold ">
-                            LISTADO DE EVENTOS
-                        </p>
-                        {events.map((currentEvent) => (
-                            <div
-                                key={currentEvent.id}
-                                className="p-4 rounded-lg shadow-md mb-2 bg-slate-200 dark:bg-background"
-                            >
-                                <p className="font-bold">{currentEvent.title}</p>
-                                <p>{formatDate(new Date(currentEvent.start))}</p>
-                            </div>
-                        ))}
+        <div className="p-4 flex flex-col min-h-screen">
+            <div className="flex flex-col md:flex-row gap-4">
+                {/* Contenedor del listado de eventos */}
+                <div className="w-full md:w-[300px] mb-4 md:mb-0 overflow-y-auto bg-gray-100 dark:bg-gray-800 rounded-lg shadow-md">
+                    <p className="text-center text-2xl font-bold p-4 bg-gray-200 dark:bg-gray-700 dark:text-white sticky top-0 z-10">
+                        LISTADO DE EVENTOS
+                    </p>
+                    <div className="p-4">
+                        {events.length === 0 ? (
+                            <p className="text-center text-gray-500 dark:text-gray-400">No hay eventos disponibles</p>
+                        ) : (
+                            events.map((currentEvent) => (
+                                <div
+                                    key={currentEvent.id}
+                                    className="p-3 mb-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+                                >
+                                    <p className="font-bold text-gray-800 dark:text-white">{currentEvent.title}</p>
+                                    <p className="text-gray-600 dark:text-gray-300">{formatDate(new Date(currentEvent.start))}</p>
+                                    {currentEvent.description && (
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{currentEvent.description}</p>
+                                    )}
+                                    {currentEvent.location && (
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Ubicación: {currentEvent.location}</p>
+                                    )}
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
-                <div className="flex-1 calendar-container">
+
+                {/* Contenedor del Calendario */}
+                <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-md">
                     <FullCalendar
                         plugins={[
                             daygridPlugin,
@@ -157,13 +165,11 @@ export function Calendario(props: CalendarioProps) {
                             listPlugin,
                             multiMonthPlugin,
                         ]}
-                        height="80vh"
                         initialView="dayGridMonth"
                         headerToolbar={{
                             left: "prev,next today",
                             center: "title",
-                            right:
-                                "dayGridMonth,timeGridWeek,timeGridDay,listMonth,multiMonthYear",
+                            right: "dayGridMonth,timeGridWeek,timeGridDay,listMonth,multiMonthYear",
                         }}
                         locale="es"
                         buttonText={{
@@ -179,7 +185,7 @@ export function Calendario(props: CalendarioProps) {
                             year: "Año",
                             monthYear: "Mes",
                         }}
-                        weekends={false}
+                        weekends={true}
                         events={calendarEvents}
                         eventContent={renderEventContent}
                         editable={true}
@@ -187,6 +193,10 @@ export function Calendario(props: CalendarioProps) {
                         selectMirror={true}
                         select={handleDateSelect}
                         eventClick={handleEventClick}
+                        height="auto" // Altura adaptable
+                        contentHeight="auto" // Ajusta al contenido
+                        // Opcional: relación de aspecto para control responsivo
+                        aspectRatio={1.5}
                     />
                 </div>
             </div>
@@ -197,22 +207,19 @@ export function Calendario(props: CalendarioProps) {
                 companies={companies}
                 setNewEvent={setNewEvent}
             />
-
             <AlertDialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
-                <AlertDialogContent>
+                <AlertDialogContent className="max-w-md">
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Está absolutamente seguro?</AlertDialogTitle>
                         <AlertDialogDescription>
                             Esta acción no se puede deshacer. Esto eliminará permanentemente
-                            el evento <span className="font-bold">`{eventToDelete?.event.title}`</span>
+                            el evento <span className="font-bold">{eventToDelete?.event.title}</span>
                             de su calendario.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setOpenDeleteDialog(false)}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete}>
-                            Eliminar
-                        </AlertDialogAction>
+                        <AlertDialogAction onClick={confirmDelete}>Eliminar</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -222,8 +229,11 @@ export function Calendario(props: CalendarioProps) {
 
 function renderEventContent(eventInfo: EventContentArg) {
     return (
-        <div className="bg-slate-200 dark:bg-background p-4 rounded-lg shadow-md">
-            <i>{eventInfo.event.title}</i>
+        <div className="bg-slate-200 dark:bg-gray-700 p-1 rounded text-sm overflow-hidden whitespace-nowrap text-ellipsis">
+            <p className="font-bold text-gray-800 dark:text-white">{eventInfo.event.title}</p>
+            {eventInfo.event.extendedProps.location && (
+                <p className="text-gray-600 dark:text-gray-300">@{eventInfo.event.extendedProps.location}</p>
+            )}
         </div>
     );
 }

@@ -8,7 +8,7 @@ export function ModalEvents(props: ModalEventsProps) {
     const { open, companies, setNewEvent, setOnSaveNewEvent, setOpen } = props
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="p-4 sm:max-w-[425px]">
+            <DialogContent className="p-4 sm:max-w-[450px]">
                 <DialogHeader>
                     <DialogTitle>NUEVO EVENTO</DialogTitle>
                 </DialogHeader>

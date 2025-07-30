@@ -6,6 +6,7 @@ export type Event = {
   description?: string;
   location?: string;
   userId: string;
+  allDay: boolean;
 };
 
 type Variante = {

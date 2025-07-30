@@ -8,7 +8,6 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
-
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
